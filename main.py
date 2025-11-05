@@ -114,14 +114,15 @@ def create_logged_tool(original_func: Callable) -> Callable:
         return sync_wrapper
 
 
-def main():
-    """Main function to start the OXII MCP server"""
-    logger.info("🚀 Starting OXII Smart Home MCP Server!")
-    
-    # Create FastMCP server instance
-    mcp = FastMCP("oxii_smart_home", port=9031)
-    
-    load_dotenv()
+# Load environment variables at module level
+load_dotenv()
+
+# Create FastMCP server instance at module level
+mcp = FastMCP("oxii_smart_home", port=9031)
+
+def setup_tools():
+    """Setup and register all tools"""
+    logger.info("🚀 Setting up OXII Smart Home MCP Server tools!")
     
     # Register all OXII tools with logging
     tools = [
@@ -156,6 +157,8 @@ def main():
     logger.info(f"🔧 OXII MCP Server starting on port 9031 with {len(logged_tools)} tools")
     logger.info(f"📊 Available tools: {[tool.__name__ for tool in tools]}")
 
+def create_app():
+    """Create and configure the Starlette app"""
     # Build Starlette app so we can expose human-readable docs alongside SSE endpoints
     app = mcp.sse_app()
     
@@ -349,6 +352,17 @@ def main():
             }
         )
 
+    return app
+
+
+# Setup tools and create the app at module level
+setup_tools()
+app = create_app()
+
+
+def main():
+    """Main function to start the server"""
+    logger.info("🚀 Starting OXII Smart Home MCP Server!")
     # Start the Starlette/uvicorn server which now also hosts documentation routes
     uvicorn.run(
         app,
